@@ -102,7 +102,6 @@ class HotelSystem:
         return self._room_index.get((node_id, room_no))
 
     def compute_node(self, c: int, s: int) -> int:
-        """คำนวณจาก router ตรง ๆ ไม่ใช้ค่าที่เก็บไว้ใน _location"""
         return self._router.node_for(c, s)
 
     def list_rooms(self) -> list:
@@ -142,51 +141,76 @@ class HotelSystem:
 
     #building
 
+
+    @staticmethod
+    def _validate_node_id(node_id):
+        if not isinstance(node_id, int) or isinstance(node_id, bool) or node_id < 1:
+            raise InvalidInputError(f"node_id ต้องเป็นจำนวนเต็มบวก ไม่ใช่ {node_id!r}")
+
     def add_node(self, node_id: int) -> MigrationReport:
-        if not isinstance(node_id, int):
-            raise InvalidInputError("node_id ต้องเป็นจำนวนเต็ม")
-        if node_id in self._router.nodes():
-            raise DuplicateNodeError(f"อาคาร {node_id} มีอยู่แล้ว")
+        self._validate_node_id(node_id)
+        if node_id in self._load:
+            raise DuplicateNodeError(f"อาคาร {node_id} มีอยู่แล้ว วงแหวนไม่เปลี่ยน")
 
         total = self.guest_count
         self._router.add_node(node_id)
+        moves = self._find_moves()
         self._load[node_id] = 0
-
-        moves = []
-        for (c, s), old_node in list(self._location.items()):
-            new_node = self._router.node_for(c, s)
-            if new_node != old_node:
-                room_no = room_number(c, s)
-                self._location[(c, s)] = new_node
-                del self._room_index[(old_node, room_no)]
-                self._room_index[(new_node, room_no)] = (c, s)
-                self._load[old_node] -= 1
-                self._load[new_node] += 1
-                moves.append(Move(c=c, s=s, old_node=old_node, new_node=new_node, room_no=room_no))
-
+        self._apply_moves(moves)
         return MigrationReport(action="add", node_id=node_id, total_guests=total, moves=moves)
 
     def remove_node(self, node_id: int) -> MigrationReport:
-        if node_id not in self._router.nodes():
+        self._validate_node_id(node_id)
+        if node_id not in self._load:
             raise NodeNotFoundError(f"ไม่พบอาคาร {node_id}")
-        if len(self._router.nodes()) <= 1:
-            raise LastNodeError("ต้องมีอาคารอย่างน้อย 1 แห่งเสมอ")
+        if len(self._load) <= 1:
+            raise LastNodeError("ลบอาคารสุดท้ายไม่ได้ ต้องมีอาคารอย่างน้อย 1 แห่งเสมอ")
 
         total = self.guest_count
         self._router.remove_node(node_id)
+        moves = self._find_moves()
+        self._apply_moves(moves)
+        assert self._load[node_id] == 0, "แขกยังค้างอยู่ในอาคารที่ถูกลบ"
+        del self._load[node_id]
+        return MigrationReport(action="remove", node_id=node_id, total_guests=total, moves=moves)
+
+    def _find_moves(self) -> list:
 
         moves = []
-        for (c, s), old_node in list(self._location.items()):
-            if old_node != node_id:
-                continue
+        for (c, s), old_node in self._location.items():
             new_node = self._router.node_for(c, s)
-            room_no = room_number(c, s)
-            self._location[(c, s)] = new_node
-            del self._room_index[(node_id, room_no)]
-            self._room_index[(new_node, room_no)] = (c, s)
-            self._load[new_node] = self._load.get(new_node, 0) + 1
-            moves.append(Move(c=c, s=s, old_node=node_id, new_node=new_node, room_no=room_no))
+            if new_node != old_node:
+                moves.append(Move(c=c, s=s, old_node=old_node, new_node=new_node,
+                                  room_no=room_number(c, s)))
+        moves.sort(key=lambda m: (m.c, m.s))    
+        return moves
 
-        del self._load[node_id]
+    def _apply_moves(self, moves: list) -> None:
 
-        return MigrationReport(action="remove", node_id=node_id, total_guests=total, moves=moves)
+        for m in moves:
+            del self._room_index[(m.old_node, m.room_no)]
+        for m in moves:
+            self._location[(m.c, m.s)] = m.new_node
+            self._room_index[(m.new_node, m.room_no)] = (m.c, m.s)
+            self._load[m.old_node] -= 1
+            self._load[m.new_node] += 1
+
+
+    def iter_guests(self) -> list:
+        return [(c, s, node_id, room_number(c, s))
+                for (c, s), node_id in sorted(self._location.items())]
+
+    def node_ids(self) -> list:
+        return sorted(self._load)
+
+    def check_integrity(self) -> bool:
+        if not (len(self._location) == len(self._room_index) == sum(self._load.values())):
+            return False
+        counted = {node_id: 0 for node_id in self._load}
+        for (c, s), node_id in self._location.items():
+            if node_id not in counted:
+                return False
+            if self._room_index.get((node_id, room_number(c, s))) != (c, s):
+                return False
+            counted[node_id] += 1
+        return counted == self._load and sorted(self._load) == sorted(self._router.nodes())
