@@ -118,10 +118,10 @@ OOD-Project/
 
 | # | ชื่อ – รหัสนักศึกษา | GitHub | ส่วนที่รับผิดชอบ | ไฟล์หลัก | เทสต์ |
 |---|---|---|---|---|---|
-| 1 | _ชื่อ_ | `@pannawitandsirirote-bit` | วงแหวนและการเลือกอาคาร: hash 64 บิต, virtual node, ค้นหาด้วย bisect, จุดชนกัน, วนกลับต้นวงแหวน | `hashing.py`, `hash_ring.py` | `test_hashing.py`, `test_hash_ring.py` |
-| 2 | _ชื่อ_ | `@____` | ข้อมูลแขกและเลขห้อง: Cantor pairing, เพิ่ม/นำแขกออก (รายคน/กลุ่ม), ค้นหาสองทาง, รายการห้อง, สถิติโหลด | `guest.py`, `hotel_system.py` (ส่วนแขก) | `test_guest.py`, `test_hotel_system.py` |
-| 3 | _ชื่อ_ | `@____` | เพิ่ม/ลบอาคารและการย้าย: MigrationReport, `hash mod N`, กรณีขอบ, ส่งออก CSV | `hotel_system.py` (ส่วนอาคาร), `mod_n.py`, `models.py`, `csv_export.py` | `test_migration.py`, `test_edge_cases.py`, `test_csv_export.py` |
-| 4 | _ชื่อ_ | `@____` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | smoke test ของเมนู, ตรวจ CSV ผลทดลอง |
+| 1 | นายปัณณวิชญ์ กิติวงศ์ไพศาล – 68010691 | `@pannawitandsirirote-bit` | วงแหวนและการเลือกอาคาร: hash 64 บิต, virtual node, ค้นหาด้วย bisect, จุดชนกัน, วนกลับต้นวงแหวน | `hashing.py`, `hash_ring.py` | `test_hashing.py`, `test_hash_ring.py` |
+| 2 | นายธนภัทร แคล้วคลาด – 68010467 | `@thanaphatken2549-oss` | ข้อมูลแขกและเลขห้อง: Cantor pairing, เพิ่ม/นำแขกออก (รายคน/กลุ่ม), ค้นหาสองทาง, รายการห้อง, สถิติโหลด | `guest.py`, `hotel_system.py` (ส่วนแขก) | `test_guest.py`, `test_hotel_system.py` |
+| 3 | นายธีรปรัชญ์ ตั้นพันธุ์ – 68010544 | `@ttheerapat06-ship-it` | เพิ่ม/ลบอาคารและการย้าย: MigrationReport, `hash mod N`, กรณีขอบ, ส่งออก CSV | `hotel_system.py` (ส่วนอาคาร), `mod_n.py`, `models.py`, `csv_export.py` | `test_migration.py`, `test_edge_cases.py`, `test_csv_export.py` |
+| 4 | นายฅีตกานต์ แซ่ลิ่ม – 68010125 | `@____` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | smoke test ของเมนู, ตรวจ CSV ผลทดลอง |
 
 **รายงาน:** ทุกคนเขียนส่วน "โครงสร้างข้อมูล + Big-O" ของงานตัวเอง คนที่ 4 เขียนส่วนการทดลอง บรรณาธิการรวมเล่ม: _กำหนด_ (ต้องใส่สัดส่วน % งานและลายเซ็นทุกคนในรายงาน)
 
@@ -426,7 +426,7 @@ __pycache__/
 
 ## 10. แผนงาน
 
-กำหนดส่งจริงจะประกาศภายหลัง ใส่วันที่เมื่อทราบ
+**กำหนดส่งงาน: วันเสาร์ที่ 14 พฤศจิกายน 2569**
 
 | ระยะ | งาน | เสร็จเมื่อ |
 |---|---|---|
@@ -441,7 +441,7 @@ __pycache__/
 
 ## 11. การส่งงานและเช็กลิสต์
 
-### สิ่งที่ต้องส่งผ่าน MS Teams (ZIP ชุดเดียว เปิดแล้วเจอ README ทันที)
+### สิ่งที่ต้องส่งผ่าน MS Teams ภายใน 14 พ.ย. 2569 (ZIP ชุดเดียว เปิดแล้วเจอ README ทันที)
 
 1. โค้ด Python ทั้งหมด + `main.py` + สคริปต์ทดสอบ + README นี้
 2. รายงาน Word และ PDF เนื้อหาตรงกัน
