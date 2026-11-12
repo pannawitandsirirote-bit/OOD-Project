@@ -33,8 +33,8 @@
 
 ```bash
 # 1) clone และเตรียม environment
-git clone https://github.com/<org-or-user>/distributed-hilbert-hotel.git
-cd distributed-hilbert-hotel
+git clone https://github.com/pannawitandsirirote-bit/OOD-Project.git
+cd OOD-Project
 python -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
@@ -75,7 +75,7 @@ python -m experiments.plot_results
 ## 2. โครงสร้างโปรเจกต์
 
 ```
-distributed-hilbert-hotel/
+OOD-Project/
 ├── README.md
 ├── requirements.txt
 ├── main.py                    # จุดเริ่มโปรแกรม → เรียก cli.menu
@@ -118,10 +118,10 @@ distributed-hilbert-hotel/
 
 | # | ชื่อ – รหัสนักศึกษา | GitHub | ส่วนที่รับผิดชอบ | ไฟล์หลัก | เทสต์ |
 |---|---|---|---|---|---|
-| 1 | _ชื่อ_ | `@____` | วงแหวนและการเลือกอาคาร: hash 64 บิต, virtual node, ค้นหาด้วย bisect, จุดชนกัน, วนกลับต้นวงแหวน | `hashing.py`, `hash_ring.py` | `test_hashing.py`, `test_hash_ring.py` |
-| 2 | _ชื่อ_ | `@____` | ข้อมูลแขกและเลขห้อง: Cantor pairing, เพิ่ม/นำแขกออก (รายคน/กลุ่ม), ค้นหาสองทาง, รายการห้อง, สถิติโหลด | `guest.py`, `hotel_system.py` (ส่วนแขก) | `test_guest.py`, `test_hotel_system.py` |
-| 3 | _ชื่อ_ | `@____` | เพิ่ม/ลบอาคารและการย้าย: MigrationReport, `hash mod N`, กรณีขอบ, ส่งออก CSV | `hotel_system.py` (ส่วนอาคาร), `mod_n.py`, `models.py`, `csv_export.py` | `test_migration.py`, `test_edge_cases.py`, `test_csv_export.py` |
-| 4 | _ชื่อ_ | `@____` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | smoke test ของเมนู, ตรวจ CSV ผลทดลอง |
+| 1 | นายปัณณวิชญ์ กิติวงศ์ไพศาล – 68010691 | `@pannawitandsirirote-bit` | วงแหวนและการเลือกอาคาร: hash 64 บิต, virtual node, ค้นหาด้วย bisect, จุดชนกัน, วนกลับต้นวงแหวน | `hashing.py`, `hash_ring.py` | `test_hashing.py`, `test_hash_ring.py` |
+| 2 | นายธนภัทร แคล้วคลาด – 68010467 | `@thanaphatken2549-oss` | ข้อมูลแขกและเลขห้อง: Cantor pairing, เพิ่ม/นำแขกออก (รายคน/กลุ่ม), ค้นหาสองทาง, รายการห้อง, สถิติโหลด | `guest.py`, `hotel_system.py` (ส่วนแขก) | `test_guest.py`, `test_hotel_system.py` |
+| 3 | นายธีรปรัชญ์ ตั้นพันธุ์ – 68010544 | `@ttheerapat06-ship-it` | เพิ่ม/ลบอาคารและการย้าย: MigrationReport, `hash mod N`, กรณีขอบ, ส่งออก CSV | `hotel_system.py` (ส่วนอาคาร), `mod_n.py`, `models.py`, `csv_export.py` | `test_migration.py`, `test_edge_cases.py`, `test_csv_export.py` |
+| 4 | นายฅีตกานต์ แซ่ลิ่ม – 68010125 | `@68010125-hub` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | smoke test ของเมนู, ตรวจ CSV ผลทดลอง |
 
 **รายงาน:** ทุกคนเขียนส่วน "โครงสร้างข้อมูล + Big-O" ของงานตัวเอง คนที่ 4 เขียนส่วนการทดลอง บรรณาธิการรวมเล่ม: _กำหนด_ (ต้องใส่สัดส่วน % งานและลายเซ็นทุกคนในรายงาน)
 
@@ -385,7 +385,7 @@ python -m unittest tests.test_hash_ring -v       # เฉพาะไฟล์
 
 ### Branch
 
-- `main` — โค้ดที่ผ่านเทสต์แล้วเท่านั้น (ตั้ง branch protection: ห้าม push ตรง, ต้องมี PR + review 1 คน)
+- `main` — โค้ดที่ผ่านเทสต์แล้วเท่านั้น ห้าม push ตรง ต้องผ่าน Pull Request เสมอ
 - `feat/<ส่วนงาน>` เช่น `feat/hash-ring`, `feat/guest`, `feat/migration`, `feat/experiments`, `feat/cli`
 - `fix/<เรื่อง>` สำหรับแก้บั๊ก
 
@@ -396,7 +396,7 @@ git checkout -b feat/hash-ring
 python -m unittest discover -s tests -v
 git add . && git commit -m "feat(ring): add bisect lookup with wrap-around"
 git push -u origin feat/hash-ring
-# เปิด Pull Request บน GitHub → ให้เพื่อน 1 คนรีวิว → merge
+# เปิด Pull Request บน GitHub → เช็กตามรายการด้านล่าง → merge → แจ้งทีมให้ git pull
 ```
 
 ### Commit message
@@ -407,7 +407,9 @@ git push -u origin feat/hash-ring
 
 - 1 PR = 1 เรื่อง ไม่ใหญ่เกินไป
 - ต้องมีเทสต์ของสิ่งที่เพิ่ม และเทสต์ทั้งหมดต้องผ่าน
-- ผู้รีวิวเช็ก: ตรงกับ Interface หัวข้อ 4, ไม่มี `print`/`input` ใน `hotel/`, ไม่ใช้ `hash()` ของ Python, กรณีขอบไม่ทำให้ข้อมูลเปลี่ยน
+- เจ้าของ PR merge เองได้ (ตกลงในทีมแล้ว) ถ้า PR แก้ไฟล์ของคนอื่นหรือแก้ Interface หัวข้อ 4 ให้บอกเจ้าของไฟล์และทีมก่อน merge
+- ก่อน merge เช็ก: ตรงกับ Interface หัวข้อ 4, ไม่มี `print`/`input` ใน `hotel/`, ไม่ใช้ `hash()` ของ Python, กรณีขอบไม่ทำให้ข้อมูลเปลี่ยน
+- หลัง merge แจ้งทีมในกลุ่มให้ `git pull`
 - ใช้ GitHub Issues จดงานย่อยและบั๊ก ติด label ตามส่วนงาน (`ring`, `guest`, `migration`, `experiment`, `cli`, `report`)
 
 ### `.gitignore` ขั้นต่ำ
@@ -424,7 +426,7 @@ __pycache__/
 
 ## 10. แผนงาน
 
-กำหนดส่งจริงจะประกาศภายหลัง ใส่วันที่เมื่อทราบ
+**กำหนดส่งงาน: วันเสาร์ที่ 14 พฤศจิกายน 2569**
 
 | ระยะ | งาน | เสร็จเมื่อ |
 |---|---|---|
@@ -439,7 +441,7 @@ __pycache__/
 
 ## 11. การส่งงานและเช็กลิสต์
 
-### สิ่งที่ต้องส่งผ่าน MS Teams (ZIP ชุดเดียว เปิดแล้วเจอ README ทันที)
+### สิ่งที่ต้องส่งผ่าน MS Teams ภายใน 14 พ.ย. 2569 (ZIP ชุดเดียว เปิดแล้วเจอ README ทันที)
 
 1. โค้ด Python ทั้งหมด + `main.py` + สคริปต์ทดสอบ + README นี้
 2. รายงาน Word และ PDF เนื้อหาตรงกัน
