@@ -53,16 +53,21 @@ class Menu:
     def __init__(self, input_fn=input, print_fn=print, data_dir=DATA_DIR):
         self._input = input_fn
         self._print = print_fn
-        self.data_dir = Path(data_dir)
-        self.system: HotelSystem | None = None
-        self.last_report = None
-        self.last_experiment_rows: list[dict] = []
+        self._data_dir = Path(data_dir)
+        self._system: HotelSystem | None = None
+        self._last_report = None
+        self._last_experiment_rows: list[dict] = []
         self._actions = {
             "1": self._init_system, "2": self._add_guest, "3": self._remove_guest,
             "4": self._add_node, "5": self._remove_node, "6": self._find_by_guest,
             "7": self._find_by_room, "8": self._list_rooms, "9": self._load_report,
             "10": self._measure, "11": self._compare, "12": self._export,
         }
+
+    @property
+    def system(self) -> HotelSystem | None:
+        """ระบบโรงแรมที่ใช้งานอยู่ (อ่านอย่างเดียว) เป็น None ถ้ายังไม่ได้เริ่มระบบ"""
+        return self._system
 
     # ------------------------------------------------------------------ วงรอบหลัก
     def run(self) -> None:
@@ -119,9 +124,9 @@ class Menu:
         return self._ask(prompt + " (y/N): ").lower() in ("y", "yes", "ใช่")
 
     def _need_system(self) -> HotelSystem:
-        if self.system is None:
+        if self._system is None:
             raise BadInput("ยังไม่ได้เริ่มระบบ กรุณาเลือกเมนู 1 ก่อน")
-        return self.system
+        return self._system
 
     def _node_ids(self) -> list[int]:
         return sorted(self._need_system().load_stats().per_node)
@@ -138,8 +143,8 @@ class Menu:
         counts = self._ask_counts(channels)
         salt = self._ask("salt [Enter = ไม่ใช้]: ")
         system = HotelSystem.create(n, v, counts, salt=salt, method="ring")
-        self.system = system  # เปลี่ยนระบบเมื่อสร้างสำเร็จเท่านั้น
-        self.last_report = None
+        self._system = system  # เปลี่ยนระบบเมื่อสร้างสำเร็จเท่านั้น
+        self._last_report = None
         self._print(f"เริ่มระบบแล้ว: N={n}, V={v}, ช่องทาง={channels}, แขกทั้งหมด K = {system.guest_count}")
 
     def _ask_counts(self, channels: int) -> list[int]:
@@ -199,7 +204,7 @@ class Menu:
         suggested = max(self._node_ids()) + 1
         node_id = self._ask_int(f"รหัสอาคารใหม่ (>= 1) [Enter = {suggested}]: ", minimum=1, default=suggested)
         report = system.add_node(node_id)
-        self.last_report = report
+        self._last_report = report
         self._show_report(report)
 
     def _remove_node(self) -> None:
@@ -208,7 +213,7 @@ class Menu:
         self._print(f"อาคารที่มีอยู่: {', '.join(map(str, ids))}")
         node_id = self._ask_int("รหัสอาคารที่จะลบ: ", minimum=1)
         report = system.remove_node(node_id)
-        self.last_report = report
+        self._last_report = report
         self._show_report(report)
 
     def _show_report(self, report) -> None:
@@ -307,7 +312,7 @@ class Menu:
             self._print(f"{TIMING_LABELS.get(metric, metric):<36}{shown:>14}  {unit}")
             rows.append(make_row("menu10", salt, "ring", k, n, v, metric, value))
         self._print("หน่วยความจำ = ส่วนที่ Python ติดตามด้วย tracemalloc ไม่ใช่ของทั้งโปรเซส | วัด 1 รอบ (ชุดเต็ม 3 รอบ ใช้ experiments.run_experiments)")
-        self.last_experiment_rows = rows
+        self._last_experiment_rows = rows
 
     def _compare(self) -> None:
         k, n, v, salt = self._ask_experiment_params(minimum_n=2)
@@ -323,7 +328,7 @@ class Menu:
                 rows.append(make_row("menu11", salt, method, k, n, v, metric, value))
         self._print(f"ค่าคาดหวัง Consistent Hashing: เพิ่ม ~ K/(N+1) = {k / (n + 1):.1f} คน, ลบ ~ K/N = {k / n:.1f} คน "
                     "(เป็นค่าคาดหวัง ผลจริงอาจต่าง)")
-        self.last_experiment_rows = rows
+        self._last_experiment_rows = rows
 
     # ------------------------------------------------------------------ 12 ส่งออก CSV
     def _export(self) -> None:
@@ -331,7 +336,7 @@ class Menu:
         choice = self._ask("เลือก: ")
         if choice == "1":
             system = self._need_system()
-            path = self._ask_path(self.data_dir / "guests.csv")
+            path = self._ask_path(self._data_dir / "guests.csv")
             rooms = system.list_rooms()
             rows = [{"channel_id": c, "sequence_id": s, "node_id": node_id, "room_no": room_no}
                     for node_id, room_no, c, s in rooms]
@@ -339,18 +344,18 @@ class Menu:
             verdict = "ตรงกับจำนวนแขกในระบบ" if written == system.guest_count else "ไม่ตรงกับจำนวนแขกในระบบ!"
             self._print(f"เขียน {written} แถว -> {path} (K = {system.guest_count}: {verdict})")
         elif choice == "2":
-            if self.last_report is None:
+            if self._last_report is None:
                 raise BadInput("ยังไม่มีรายการย้าย กรุณาเพิ่ม/ลบอาคาร (เมนู 4 หรือ 5) ก่อน")
-            path = self._ask_path(self.data_dir / "moves.csv")
+            path = self._ask_path(self._data_dir / "moves.csv")
             rows = [{"channel_id": m.c, "sequence_id": m.s, "old_node_id": m.old_node,
-                     "new_node_id": m.new_node, "room_no": m.room_no} for m in self.last_report.moves]
+                     "new_node_id": m.new_node, "room_no": m.room_no} for m in self._last_report.moves]
             written = write_rows(path, rows, ["channel_id", "sequence_id", "old_node_id", "new_node_id", "room_no"])
-            self._print(f"เขียน {written} แถว -> {path} (รายงานว่าย้าย {self.last_report.moved_count} คน)")
+            self._print(f"เขียน {written} แถว -> {path} (รายงานว่าย้าย {self._last_report.moved_count} คน)")
         elif choice == "3":
-            if not self.last_experiment_rows:
+            if not self._last_experiment_rows:
                 raise BadInput("ยังไม่มีผลวัด กรุณารันเมนู 10 หรือ 11 ก่อน")
-            path = self._ask_path(self.data_dir / "experiment_menu.csv")
-            written = write_rows(path, self.last_experiment_rows, RESULT_COLUMNS)
+            path = self._ask_path(self._data_dir / "experiment_menu.csv")
+            written = write_rows(path, self._last_experiment_rows, RESULT_COLUMNS)
             self._print(f"เขียน {written} แถว -> {path}")
         else:
             raise BadInput("เลือก 1, 2 หรือ 3")

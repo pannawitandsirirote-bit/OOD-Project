@@ -5,7 +5,7 @@ from hotel.guest import room_number
 from hotel.hash_ring import HashRing
 from hotel.hotel_system import HotelSystem
 from hotel.mod_n import ModNRouter
-from hotel.models import MigrationReport, Move
+from hotel.models import LoadStats, MigrationReport, Move
 
 A, B, C, D = 1, 2, 3, 4
 GUEST_POS = [10, 20, 25, 35, 50, 70, 90]          # แขก (1, 1) .. (1, 7)
@@ -203,9 +203,30 @@ class ReportBehaviour(unittest.TestCase):
     def test_moved_count_is_always_len_moves(self):
         rep = MigrationReport("add", 9, 10, [Move(1, 1, 1, 9, 1)])
         self.assertEqual(rep.moved_count, 1)
-        rep.moves.append(Move(1, 2, 2, 9, 3))
+        rep = MigrationReport("add", 9, 10, [Move(1, 1, 1, 9, 1), Move(1, 2, 2, 9, 3)])
+        self.assertEqual(rep.moved_count, len(rep.moves))
         self.assertEqual(rep.moved_count, 2)
         self.assertAlmostEqual(rep.rate, 0.2)
+
+    def test_report_is_read_only(self):
+        moves = [Move(1, 1, 1, 9, 1)]
+        rep = MigrationReport("add", 9, 10, moves)
+        moves.append(Move(1, 2, 2, 9, 3))              # แก้ list ต้นฉบับ ไม่กระทบรายงาน
+        self.assertEqual(rep.moved_count, 1)
+        with self.assertRaises(AttributeError):
+            rep.moves.append(Move(1, 2, 2, 9, 3))      # moves เป็น tuple เพิ่มรายการไม่ได้
+        with self.assertRaises(AttributeError):
+            rep.total_guests = 0                        # property อ่านอย่างเดียว
+        with self.assertRaises(AttributeError):
+            rep.moves[0].new_node = 5                   # Move ก็แก้ค่าไม่ได้
+        self.assertEqual((rep.moved_count, rep.total_guests, rep.moves[0].new_node), (1, 10, 9))
+
+    def test_load_stats_is_read_only(self):
+        stats = LoadStats({1: 3, 2: 1}, 3, 1, 2.0, 1.0, 0.5)
+        stats.per_node[1] = 99                          # ได้สำเนา dict แก้แล้วไม่กระทบต้นฉบับ
+        self.assertEqual(stats.per_node, {1: 3, 2: 1})
+        with self.assertRaises(AttributeError):
+            stats.cv = 0
 
     def test_describe_contains_numbers(self):
         text = MigrationReport("remove", 3, 10, [Move(1, 1, 3, 1, 1)]).describe()
