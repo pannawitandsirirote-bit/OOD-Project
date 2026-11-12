@@ -27,9 +27,9 @@
 
 | รายการ | ค่า |
 |---|---|
-| Python | **3.12** — ทุกคนใช้รุ่นเดียวกัน (ใส่รุ่นจริงจาก `python --version` ก่อนส่ง: `3.12.__`) |
+| Python | **3.10 ขึ้นไป** — พัฒนาด้วย 3.13 และรันเทสต์ผ่านบน 3.10 กับ 3.13 (รุ่นที่ใช้รันผลการทดลองจริงบันทึกไว้ใน `experiments/results/run_info.txt`) |
 | โปรแกรมหลัก | ใช้ไลบรารีมาตรฐานเท่านั้น (`hashlib`, `bisect`, `csv`, `time`, `tracemalloc`, `statistics`, `unittest`) |
-| ไลบรารีเพิ่มเติม | `matplotlib` — ใช้วาดกราฟการทดลองเท่านั้น (อยู่ใน `requirements.txt`) |
+| ไลบรารีเพิ่มเติม | `matplotlib` — ใช้วาดกราฟการทดลองเท่านั้น (อยู่ใน `requirements.txt`) โปรแกรม เทสต์ และการทดลองรันได้โดยไม่ต้องติดตั้ง |
 
 ```bash
 # 1) clone และเตรียม environment
@@ -45,7 +45,7 @@ python main.py
 # 3) รันทดสอบอัตโนมัติทั้งหมด
 python -m unittest discover -s tests -v
 
-# 4) รันการทดลอง A, B, C (salt 0, 1, 2) แล้ววาดกราฟ
+# 4) รันการทดลอง A, B, C (salt 0, 1, 2) แล้ววาดกราฟ  → ผลอยู่ใน experiments/results/
 python -m experiments.run_experiments --exp all --salts 0 1 2
 python -m experiments.plot_results
 ```
@@ -89,20 +89,25 @@ OOD-Project/
 │   ├── models.py              # Move, MigrationReport, LoadStats, ข้อผิดพลาด
 │   └── csv_export.py          # ส่งออก CSV (UTF-8)
 ├── cli/
+│   ├── __init__.py
 │   └── menu.py                # เมนูข้อความ รับ input และแสดงผลเท่านั้น
 ├── experiments/
-│   ├── run_experiments.py     # การทดลอง A, B, C
+│   ├── __init__.py
+│   ├── run_experiments.py     # การทดลอง A, B, C (ใช้จากเมนู 10–11 ด้วย)
+│   ├── results_io.py          # อ่าน/เขียน CSV ผลทดลอง และสรุปผล 3 รอบ
 │   ├── plot_results.py        # กราฟ (ก) (ข) (ค)
-│   └── results/               # CSV ผลทดลอง + PNG กราฟ
-├── tests/
+│   └── results/               # CSV ผลทดลอง + PNG กราฟ + run_info.txt
+├── tests/                     # 146 เทสต์ (unittest)
 │   ├── test_hashing.py
 │   ├── test_guest.py
 │   ├── test_hash_ring.py      # รวมตัวอย่างวงแหวนเล็กหัวข้อ 9.1
 │   ├── test_hotel_system.py
 │   ├── test_migration.py
 │   ├── test_edge_cases.py
-│   └── test_csv_export.py
-├── data/                      # CSV ตัวอย่างสำหรับส่ง (แขก, รายการย้าย)
+│   ├── test_csv_export.py
+│   ├── test_cli_smoke.py      # ลองเมนูทุกข้อด้วย input จำลอง
+│   └── test_experiment_csv.py # ตรวจ CSV และตัววัดของการทดลอง
+├── data/                      # CSV ตัวอย่างสำหรับส่ง (แขก, รายการย้าย) — เมนู 12 บันทึกที่นี่
 └── docs/
     ├── class_diagram.png
     └── report/                # รายงาน .docx และ .pdf
@@ -121,7 +126,7 @@ OOD-Project/
 | 1 | นายปัณณวิชญ์ กิติวงศ์ไพศาล – 68010691 | `@pannawitandsirirote-bit` | วงแหวนและการเลือกอาคาร: hash 64 บิต, virtual node, ค้นหาด้วย bisect, จุดชนกัน, วนกลับต้นวงแหวน | `hashing.py`, `hash_ring.py` | `test_hashing.py`, `test_hash_ring.py` |
 | 2 | นายธนภัทร แคล้วคลาด – 68010467 | `@thanaphatken2549-oss` | ข้อมูลแขกและเลขห้อง: Cantor pairing, เพิ่ม/นำแขกออก (รายคน/กลุ่ม), ค้นหาสองทาง, รายการห้อง, สถิติโหลด | `guest.py`, `hotel_system.py` (ส่วนแขก) | `test_guest.py`, `test_hotel_system.py` |
 | 3 | นายธีรปรัชญ์ ตั้นพันธุ์ – 68010544 | `@ttheerapat06-ship-it` | เพิ่ม/ลบอาคารและการย้าย: MigrationReport, `hash mod N`, กรณีขอบ, ส่งออก CSV | `hotel_system.py` (ส่วนอาคาร), `mod_n.py`, `models.py`, `csv_export.py` | `test_migration.py`, `test_edge_cases.py`, `test_csv_export.py` |
-| 4 | นายฅีตกานต์ แซ่ลิ่ม – 68010125 | `@68010125-hub` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | smoke test ของเมนู, ตรวจ CSV ผลทดลอง |
+| 4 | นายฅีตกานต์ แซ่ลิ่ม – 68010125 | `@68010125-hub` | การทดลองและส่วนติดต่อผู้ใช้: การทดลอง A/B/C, จับเวลา, tracemalloc, กราฟ, เมนูข้อความ | `experiments/`, `cli/menu.py`, `main.py` | `test_cli_smoke.py`, `test_experiment_csv.py` |
 
 **รายงาน:** ทุกคนเขียนส่วน "โครงสร้างข้อมูล + Big-O" ของงานตัวเอง คนที่ 4 เขียนส่วนการทดลอง บรรณาธิการรวมเล่ม: _กำหนด_ (ต้องใส่สัดส่วน % งานและลายเซ็นทุกคนในรายงาน)
 
@@ -130,6 +135,8 @@ OOD-Project/
 ## 4. ข้อตกลง Interface (ตกลงก่อนเริ่มเขียน)
 
 ส่วนนี้คือ "สัญญา" ระหว่างสมาชิก ใครจะเปลี่ยนชื่อฟังก์ชันหรือชนิดข้อมูลต้องเปิด PR แก้ README ส่วนนี้และให้ทุกคนรับทราบก่อน
+
+**Encapsulation:** ทุกคลาสเก็บข้อมูลเป็นแอตทริบิวต์ private (ขึ้นต้นด้วย `_`) โค้ดภายนอกอ่านผ่าน property หรือเมธอดเท่านั้น และแก้ข้อมูลได้ผ่านเมธอดของคลาสนั้นเท่านั้น ข้อมูลกับดัชนีจึงไม่หลุดจากกัน คลาสที่เป็นผลลัพธ์ (`Guest`, `Move`, `MigrationReport`, `LoadStats`) สร้างแล้วแก้ค่าไม่ได้
 
 ### ชนิดข้อมูลร่วม
 
@@ -157,12 +164,10 @@ def hash64(key: str, salt: str = "") -> int:
 def room_number(c: int, s: int) -> int:
     """a = c-1, b = s-1 ; ((a+b)*(a+b+1))//2 + b + 1  — จำนวนเต็มล้วน ห้ามใช้ทศนิยม"""
 
-@dataclass(frozen=True)
-class Guest:
-    c: int
-    s: int
-    room_no: int    # = room_number(c, s)
-    key: str        # = guest_key(c, s)
+class Guest:                                    # __slots__ + private: _c, _s, _room_no, _key
+    @classmethod
+    def create(cls, c: int, s: int) -> "Guest"  # คำนวณ room_no และ key ให้
+    c, s, room_no, key                          # property อ่านอย่างเดียว
 ```
 
 ### Router: `HashRing` และ `ModNRouter` (duck typing — ใช้แทนกันได้ใน HotelSystem)
@@ -174,10 +179,14 @@ class HashRing:
     def remove_node(self, node_id: int) -> None   # ลบ V จุดของอาคารนั้นทั้งหมด
     def locate(self, position: int) -> int        # node_id ของจุดแรกที่ pos >= position (ไม่มีให้วนกลับ)
     def node_for(self, c: int, s: int) -> int     # locate(hash_fn(guest_key(c, s), salt))
+    def guest_position(self, c: int, s: int) -> int   # ตำแหน่งของแขกบนวงแหวน
     def nodes(self) -> list[int]                  # เรียงจากน้อยไปมาก
+    def points(self) -> list[tuple]               # สำเนาจุดทั้งหมด (pos, node_id, j)
     def __len__(self) -> int                      # M = N × V
+    v, salt                                       # property อ่านอย่างเดียว
     # ภายใน: _points: list[tuple[pos, node_id, j]] เรียงตามคีย์ (pos, node_id, j)
     #        _positions: list[int] ขนานกับ _points ใช้กับ bisect_left
+    #        _nodes: set[int] ตรวจอาคารซ้ำ/มีอยู่ O(1)
 
 class ModNRouter:
     def __init__(self, salt: str = "", hash_fn=hash64): ...
@@ -216,6 +225,9 @@ class HotelSystem:
     # รายงาน
     def list_rooms(self) -> list[tuple[int, int, int, int]]   # (node_id, room_no, c, s) เรียงแล้ว
     def load_stats(self) -> LoadStats
+    def iter_guests(self) -> list[tuple[int, int, int, int]]  # (c, s, node_id, room_no) ใช้ส่งออก CSV
+    def node_ids(self) -> list[int]
+    def check_integrity(self) -> bool                         # ดัชนีทั้ง 3 ชุดสอดคล้องกันหรือไม่
     @property
     def guest_count(self) -> int                               # K
 ```
@@ -240,25 +252,34 @@ class LastNodeError(HotelError): ...
 class DuplicateGuestError(HotelError): ...
 class GuestNotFoundError(HotelError): ...
 class InvalidInputError(HotelError): ...  # ค่าติดลบ, ไม่ใช่จำนวนเต็ม, V < 1 ฯลฯ
+class ExportError(HotelError): ...        # เขียนไฟล์ CSV ไม่ได้ / คอลัมน์ไม่ครบ
 
-@dataclass(frozen=True)
+# ทั้งสามคลาสด้านล่างใช้ __slots__ เก็บค่าเป็น private และอ่านผ่าน property อย่างเดียว
 class Move:
-    c: int; s: int; old_node: int; new_node: int; room_no: int
+    def __init__(self, c, s, old_node, new_node, room_no)
+    c, s, old_node, new_node, room_no      # property
 
-@dataclass
 class MigrationReport:
-    action: str              # "add" | "remove"
-    node_id: int
-    total_guests: int        # K ก่อนคำสั่ง
-    moves: list[Move]
-    moved_count -> int       # property = len(moves) เสมอ
-    rate -> float | None     # property = moved_count / K ; None เมื่อ K == 0
+    def __init__(self, action, node_id, total_guests, moves=())   # action = "add" | "remove"
+    action, node_id, total_guests          # property (total_guests = K ก่อนคำสั่ง)
+    moves -> tuple[Move, ...]              # tuple: ข้างนอกเพิ่ม/ลบรายการไม่ได้
+    moved_count -> int                     # = len(moves) เสมอ
+    rate -> float | None                   # = moved_count / K ; None เมื่อ K == 0
+    def describe(self) -> str
 
-@dataclass
 class LoadStats:
-    per_node: dict[int, int]
-    max_load: int; min_load: int; mean: float; std: float
-    cv: float | None         # std / mean ; None เมื่อ K == 0
+    def __init__(self, per_node, max_load, min_load, mean, std, cv)
+    per_node -> dict[int, int]             # คืนสำเนา dict
+    max_load, min_load, mean, std          # property
+    cv -> float | None                     # std / mean ; None เมื่อ K == 0
+```
+
+### `hotel/csv_export.py`
+
+```python
+def export_guests(system, path) -> int        # guests.csv คืนจำนวนแถว (= K)
+def export_moves(report, path) -> int         # moves.csv คืนจำนวนแถว (= moved_count)
+def export_experiment(rows, path) -> int      # experiment_*.csv ; คอลัมน์ไม่ครบ → ExportError
 ```
 
 **ข้อตกลงการจัดการข้อผิดพลาด:** ฟังก์ชันใน `hotel/` ตรวจความถูกต้อง **ทั้งหมดก่อน** แล้วจึงแก้ข้อมูล ถ้าผิดให้ `raise` ข้อผิดพลาดตระกูล `HotelError` (ข้อมูลเดิมจึงไม่เปลี่ยน) ส่วน `cli/` จับ `HotelError` แล้วแสดงข้อความ โปรแกรมต้องไม่หยุดทำงาน
@@ -270,6 +291,7 @@ class LoadStats:
 | `guests.csv` | `channel_id, sequence_id, node_id, room_no` |
 | `moves.csv` | `channel_id, sequence_id, old_node_id, new_node_id, room_no` |
 | `experiment_*.csv` | `experiment, salt, method, K, N, V, metric, value, unit` |
+| `summary.csv` | `experiment, method, K, N, V, metric, unit, rounds, median, mean, min, max` |
 
 ---
 
@@ -317,7 +339,7 @@ class LoadStats:
 ## 7. การทดสอบ
 
 ```bash
-python -m unittest discover -s tests -v          # ทั้งหมด
+python -m unittest discover -s tests -v          # ทั้งหมด (146 เทสต์)
 python -m unittest tests.test_hash_ring -v       # เฉพาะไฟล์
 ```
 
@@ -371,11 +393,25 @@ python -m unittest tests.test_hash_ring -v       # เฉพาะไฟล์
 - **หน่วยความจำ:** `tracemalloc` วัดส่วนที่เพิ่มจากจุดเริ่มเดียวกัน รายงาน current และ peak เป็น MiB (เป็นหน่วยความจำที่ Python ติดตาม ไม่ใช่ของทั้งโปรเซส) และ **แยกรอบวัดหน่วยความจำออกจากรอบจับเวลา**
 - **ความสมดุล:** CV = ส่วนเบี่ยงเบนมาตรฐาน / ค่าเฉลี่ย (ทีมใช้ population SD — `statistics.pstdev`)
 
-**ผลลัพธ์** อยู่ใน `experiments/results/` — CSV ทุกรอบพร้อมพารามิเตอร์และ salt และกราฟอย่างน้อย 3 ภาพ:
+**วิธีรัน**
 
-- (ก) เวลาเทียบ K
-- (ข) อัตราการย้ายเทียบ N ของทั้งสองวิธี
-- (ค) ผลของ V ต่อ CV และหน่วยความจำ
+```bash
+python -m experiments.run_experiments --exp all --salts 0 1 2   # ชุดเต็ม (ใช้ในรายงาน)
+python -m experiments.run_experiments --exp B --quick --out experiments/results_quick   # ชุดเล็ก ไว้ตรวจว่าโค้ดทำงาน
+# (--quick ต้องใส่ --out แยกโฟลเดอร์ ไม่อย่างนั้นจะเขียนทับผลจริงใน experiments/results/ ; โฟลเดอร์ quick ไม่ต้อง commit)
+python -m experiments.plot_results                              # --lang en ถ้าเครื่องไม่มีฟอนต์ไทย
+```
+
+**ผลลัพธ์** อยู่ใน `experiments/results/`:
+
+| ไฟล์ | เนื้อหา |
+|---|---|
+| `experiment_A.csv`, `experiment_B.csv`, `experiment_C.csv` | ผลดิบทุกรอบ พร้อมพารามิเตอร์และ salt |
+| `summary.csv` | มัธยฐาน ค่าเฉลี่ย ต่ำสุด สูงสุด ของ 3 รอบ |
+| `run_info.txt` | วันเวลา, รุ่น Python, เครื่อง, salt และพารามิเตอร์ที่ใช้ |
+| `fig_a_time_vs_K.png` | (ก) เวลาเทียบ K |
+| `fig_b_move_rate_vs_N.png` | (ข) อัตราการย้ายเทียบ N ของทั้งสองวิธี |
+| `fig_c_V_effect.png` | (ค) ผลของ V ต่อ CV และหน่วยความจำ |
 
 ทุกกราฟต้องมีชื่อแกน หน่วย พารามิเตอร์ และแสดงความแปรปรวน 3 รอบ (ค่าเฉลี่ยกับช่วงต่ำสุด–สูงสุด)
 
