@@ -97,7 +97,7 @@ OOD-Project/
 │   ├── results_io.py          # อ่าน/เขียน CSV ผลทดลอง และสรุปผล 3 รอบ
 │   ├── plot_results.py        # กราฟ (ก) (ข) (ค)
 │   └── results/               # CSV ผลทดลอง + PNG กราฟ + run_info.txt
-├── tests/                     # 146 เทสต์ (unittest)
+├── tests/                     # 147 เทสต์ (unittest)
 │   ├── test_hashing.py
 │   ├── test_guest.py
 │   ├── test_hash_ring.py      # รวมตัวอย่างวงแหวนเล็กหัวข้อ 9.1
@@ -136,7 +136,7 @@ OOD-Project/
 
 ส่วนนี้คือ "สัญญา" ระหว่างสมาชิก ใครจะเปลี่ยนชื่อฟังก์ชันหรือชนิดข้อมูลต้องเปิด PR แก้ README ส่วนนี้และให้ทุกคนรับทราบก่อน
 
-**Encapsulation:** ทุกคลาสเก็บข้อมูลเป็นแอตทริบิวต์ private (ขึ้นต้นด้วย `_`) โค้ดภายนอกอ่านผ่าน property หรือเมธอดเท่านั้น และแก้ข้อมูลได้ผ่านเมธอดของคลาสนั้นเท่านั้น ข้อมูลกับดัชนีจึงไม่หลุดจากกัน คลาสที่เป็นผลลัพธ์ (`Guest`, `Move`, `MigrationReport`, `LoadStats`) สร้างแล้วแก้ค่าไม่ได้
+**Encapsulation:** แอตทริบิวต์และเมธอดภายในของทุกคลาสในโปรแกรม (`hotel/`, `cli/`) ขึ้นต้นด้วย `__` สองขีด Python จะเปลี่ยนชื่อให้ (name mangling เช่น `__location` → `_HotelSystem__location`) โค้ดนอกคลาสจึงเรียกด้วยชื่อเดิมไม่ได้ ต้องอ่านผ่าน property หรือเมธอด public และแก้ข้อมูลได้ผ่านเมธอดของคลาสนั้นเท่านั้น ข้อมูลกับดัชนีจึงไม่หลุดจากกัน คลาสที่เป็นผลลัพธ์ (`Guest`, `Move`, `MigrationReport`, `LoadStats`) สร้างแล้วแก้ค่าไม่ได้ ส่วนที่ยังใช้ `_` ขีดเดียวโดยตั้งใจ: ฟังก์ชันช่วยระดับโมดูล (เช่น `_write`, `_check_report`) เพราะ name mangling ทำงานเฉพาะในคลาส และคลาสช่วยในไฟล์เทสต์ที่สืบทอดกัน (เช่น `_tmp`) เพราะ `__` จะทำให้คลาสลูกมองไม่เห็นแอตทริบิวต์ของคลาสแม่
 
 ### ชนิดข้อมูลร่วม
 
@@ -164,7 +164,7 @@ def hash64(key: str, salt: str = "") -> int:
 def room_number(c: int, s: int) -> int:
     """a = c-1, b = s-1 ; ((a+b)*(a+b+1))//2 + b + 1  — จำนวนเต็มล้วน ห้ามใช้ทศนิยม"""
 
-class Guest:                                    # __slots__ + private: _c, _s, _room_no, _key
+class Guest:                                    # __slots__ + private: __c, __s, __room_no, __key
     @classmethod
     def create(cls, c: int, s: int) -> "Guest"  # คำนวณ room_no และ key ให้
     c, s, room_no, key                          # property อ่านอย่างเดียว
@@ -184,14 +184,14 @@ class HashRing:
     def points(self) -> list[tuple]               # สำเนาจุดทั้งหมด (pos, node_id, j)
     def __len__(self) -> int                      # M = N × V
     v, salt                                       # property อ่านอย่างเดียว
-    # ภายใน: _points: list[tuple[pos, node_id, j]] เรียงตามคีย์ (pos, node_id, j)
-    #        _positions: list[int] ขนานกับ _points ใช้กับ bisect_left
-    #        _nodes: set[int] ตรวจอาคารซ้ำ/มีอยู่ O(1)
+    # ภายใน: __points: list[tuple[pos, node_id, j]] เรียงตามคีย์ (pos, node_id, j)
+    #        __positions: list[int] ขนานกับ __points ใช้กับ bisect_left
+    #        __nodes: set[int] ตรวจอาคารซ้ำ/มีอยู่ O(1)
 
 class ModNRouter:
     def __init__(self, salt: str = "", hash_fn=hash64): ...
-    # _node_list: list[int] ตามลำดับที่เพิ่ม ; เพิ่ม = ต่อท้าย ; ลบ = เอาออกโดยรักษาลำดับที่เหลือ
-    # node_for(c, s) = _node_list[hash_fn(guest_key(c, s), salt) % N]
+    # __node_list: list[int] ตามลำดับที่เพิ่ม ; เพิ่ม = ต่อท้าย ; ลบ = เอาออกโดยรักษาลำดับที่เหลือ
+    # node_for(c, s) = __node_list[hash_fn(guest_key(c, s), salt) % N]
     # มีเมธอด add_node / remove_node / node_for / nodes เหมือน HashRing
 ```
 
@@ -227,6 +227,9 @@ class HotelSystem:
     def load_stats(self) -> LoadStats
     def iter_guests(self) -> list[tuple[int, int, int, int]]  # (c, s, node_id, room_no) ใช้ส่งออก CSV
     def node_ids(self) -> list[int]
+    def router_nodes(self) -> list[int]                       # อาคารตามที่วงแหวนเก็บ (สำเนา อ่านอย่างเดียว)
+    @property
+    def point_count(self) -> int                              # จุดบนวงแหวน M = N × V (ModNRouter = N)
     def check_integrity(self) -> bool                         # ดัชนีทั้ง 3 ชุดสอดคล้องกันหรือไม่
     @property
     def guest_count(self) -> int                               # K
@@ -236,11 +239,11 @@ class HotelSystem:
 
 | ตัวแปร | ชนิด | ใช้ทำอะไร |
 |---|---|---|
-| `_location` | `dict[(c, s) → node_id]` | ค้นหาด้วยรหัสแขก / ตรวจรหัสซ้ำ O(1) |
-| `_room_index` | `dict[(node_id, room_no) → (c, s)]` | ค้นหาด้วยที่อยู่ห้อง O(1) |
-| `_load` | `dict[node_id → int]` | นับแขกต่ออาคาร (มีทุกอาคาร รวมที่เป็น 0) |
+| `__location` | `dict[(c, s) → node_id]` | ค้นหาด้วยรหัสแขก / ตรวจรหัสซ้ำ O(1) |
+| `__room_index` | `dict[(node_id, room_no) → (c, s)]` | ค้นหาด้วยที่อยู่ห้อง O(1) |
+| `__load` | `dict[node_id → int]` | นับแขกต่ออาคาร (มีทุกอาคาร รวมที่เป็น 0) |
 
-เมื่อแขกย้ายอาคาร ต้องอัปเดตทั้ง 3 ชุด (`room_no` คงเดิม เปลี่ยนเฉพาะ `node_id`) และเทสต์ต้องตรวจว่า `len(_location) == len(_room_index) == sum(_load.values())`
+เมื่อแขกย้ายอาคาร ต้องอัปเดตทั้ง 3 ชุด (`room_no` คงเดิม เปลี่ยนเฉพาะ `node_id`) และเทสต์ต้องตรวจว่า `len(__location) == len(__room_index) == sum(__load.values())` (ผ่านเมธอด `check_integrity()`)
 
 ### `hotel/models.py`
 
@@ -339,7 +342,7 @@ def export_experiment(rows, path) -> int      # experiment_*.csv ; คอลั�
 ## 7. การทดสอบ
 
 ```bash
-python -m unittest discover -s tests -v          # ทั้งหมด (146 เทสต์)
+python -m unittest discover -s tests -v          # ทั้งหมด (147 เทสต์)
 python -m unittest tests.test_hash_ring -v       # เฉพาะไฟล์
 ```
 

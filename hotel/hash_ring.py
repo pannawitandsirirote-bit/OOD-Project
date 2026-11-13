@@ -1,11 +1,11 @@
 """HashRing — วงแหวน Consistent Hashing พร้อม virtual node
 
 โครงสร้างข้อมูล
-- self._points    : list ของ tuple (pos, node_id, j) เรียงจากน้อยไปมากเสมอ
-                    การเรียง tuple ของ Python เทียบ pos ก่อน ถ้าเท่ากันเทียบ node_id แล้วจึง j
-                    จึงตรงกับกติกาจุดชนกันของโจทย์ 4.3 ข้อ 4 พอดี
-- self._positions : list ของ pos อย่างเดียว ลำดับเดียวกับ _points ใช้กับ bisect_left
-- self._nodes     : set ของ node_id ที่อยู่ในวงแหวน ตรวจซ้ำ/มีอยู่ได้ O(1)
+- self.__points    : list ของ tuple (pos, node_id, j) เรียงจากน้อยไปมากเสมอ
+                     การเรียง tuple ของ Python เทียบ pos ก่อน ถ้าเท่ากันเทียบ node_id แล้วจึง j
+                     จึงตรงกับกติกาจุดชนกันของโจทย์ 4.3 ข้อ 4 พอดี
+- self.__positions : list ของ pos อย่างเดียว ลำดับเดียวกับ __points ใช้กับ bisect_left
+- self.__nodes     : set ของ node_id ที่อยู่ในวงแหวน ตรวจซ้ำ/มีอยู่ได้ O(1)
 
 สัญลักษณ์: N = จำนวนอาคาร, V = virtual node ต่ออาคาร, M = N × V = จำนวนจุดทั้งหมด
 """
@@ -28,78 +28,78 @@ class HashRing:
         """
         if not isinstance(v, int) or isinstance(v, bool) or v < 1:
             raise InvalidInputError(f"V ต้องเป็นจำนวนเต็ม >= 1 ไม่ใช่ {v!r}")
-        self._v = v
-        self._salt = salt
-        self._hash_fn = hash_fn
-        self._points = []
-        self._positions = []
-        self._nodes = set()
+        self.__v = v
+        self.__salt = salt
+        self.__hash_fn = hash_fn
+        self.__points = []
+        self.__positions = []
+        self.__nodes = set()
 
     @property
     def v(self) -> int:
-        return self._v
+        return self.__v
 
     @property
     def salt(self) -> str:
-        return self._salt
+        return self.__salt
 
     # ------------------------------------------------------------------ อาคาร
 
     def add_node(self, node_id: int) -> None:
         """เพิ่มเฉพาะ V จุดของอาคารใหม่ จุดเดิมไม่ถูกแตะ
 
-        Big-O: แฮช V ครั้ง O(V) + เรียง list ใหม่ O(M log M) + สร้าง _positions O(M)
+        Big-O: แฮช V ครั้ง O(V) + เรียง list ใหม่ O(M log M) + สร้าง __positions O(M)
         รวม O(M log M) กรณีเลวร้ายที่สุด
         (Timsort ของ Python เจอ list เดิมที่เรียงอยู่แล้ว จึงทำงานจริงใกล้ O(M + V log V))
         """
-        self._validate_node_id(node_id)
-        if node_id in self._nodes:
+        self.__validate_node_id(node_id)
+        if node_id in self.__nodes:
             raise DuplicateNodeError(f"อาคาร {node_id} มีอยู่แล้ว วงแหวนไม่เปลี่ยน")
 
         new_points = [
-            (self._hash_fn(vnode_key(node_id, j), self._salt), node_id, j)
-            for j in range(self._v)
+            (self.__hash_fn(vnode_key(node_id, j), self.__salt), node_id, j)
+            for j in range(self.__v)
         ]
-        self._points.extend(new_points)
-        self._points.sort()                       # เรียงด้วย (pos, node_id, j)
-        self._positions = [p[0] for p in self._points]
-        self._nodes.add(node_id)
+        self.__points.extend(new_points)
+        self.__points.sort()                       # เรียงด้วย (pos, node_id, j)
+        self.__positions = [p[0] for p in self.__points]
+        self.__nodes.add(node_id)
 
     def remove_node(self, node_id: int) -> None:
         """ลบ V จุดของอาคารนั้นทั้งหมด จุดของอาคารอื่นคงตำแหน่งเดิม
 
         Big-O: กรอง list ครั้งเดียว O(M)
         """
-        self._validate_node_id(node_id)
-        if node_id not in self._nodes:
+        self.__validate_node_id(node_id)
+        if node_id not in self.__nodes:
             raise NodeNotFoundError(f"ไม่พบอาคาร {node_id}")
-        if len(self._nodes) == 1:
+        if len(self.__nodes) == 1:
             raise LastNodeError("ลบอาคารสุดท้ายไม่ได้ ต้องมีอาคารอย่างน้อย 1 แห่งเสมอ")
 
-        self._points = [p for p in self._points if p[1] != node_id]
-        self._positions = [p[0] for p in self._points]
-        self._nodes.remove(node_id)
+        self.__points = [p for p in self.__points if p[1] != node_id]
+        self.__positions = [p[0] for p in self.__points]
+        self.__nodes.remove(node_id)
 
     # ------------------------------------------------------------- เลือกอาคาร
 
     def locate(self, position: int) -> int:
         """คืน node_id ของจุดแรกที่ตำแหน่ง >= position ถ้าไม่มีให้วนกลับจุดแรกของวงแหวน
 
-        bisect_left คืน index แรกที่ _positions[i] >= position
+        bisect_left คืน index แรกที่ __positions[i] >= position
         ถ้ามีหลายจุดตำแหน่งเท่ากัน จะได้จุดแรกตามลำดับ (pos, node_id, j)
 
         Big-O: O(log M)
         """
-        if not self._points:
+        if not self.__points:
             raise InvalidInputError("วงแหวนยังไม่มีอาคาร")
-        i = bisect_left(self._positions, position)
-        if i == len(self._positions):             # เลยจุดสุดท้าย → วนกลับต้นวงแหวน
+        i = bisect_left(self.__positions, position)
+        if i == len(self.__positions):             # เลยจุดสุดท้าย → วนกลับต้นวงแหวน
             i = 0
-        return self._points[i][1]
+        return self.__points[i][1]
 
     def guest_position(self, c: int, s: int) -> int:
         """ตำแหน่งของแขก (c, s) บนวงแหวน"""
-        return self._hash_fn(guest_key(c, s), self._salt)
+        return self.__hash_fn(guest_key(c, s), self.__salt)
 
     def node_for(self, c: int, s: int) -> int:
         """คำนวณอาคารของแขกจากวงแหวนปัจจุบันทุกครั้ง ไม่ใช้ค่าที่บันทึกไว้
@@ -112,20 +112,20 @@ class HashRing:
 
     def nodes(self) -> list:
         """รหัสอาคารทั้งหมด เรียงจากน้อยไปมาก — O(N log N)"""
-        return sorted(self._nodes)
+        return sorted(self.__nodes)
 
     def points(self) -> list:
         """สำเนาจุดทั้งหมด [(pos, node_id, j), ...] ใช้วาดวงแหวนหรือตรวจสอบ — O(M)"""
-        return list(self._points)
+        return list(self.__points)
 
     def __contains__(self, node_id) -> bool:
-        return node_id in self._nodes
+        return node_id in self.__nodes
 
     def __len__(self) -> int:
         """จำนวนจุดทั้งหมด M = N × V"""
-        return len(self._points)
+        return len(self.__points)
 
     @staticmethod
-    def _validate_node_id(node_id) -> None:
+    def __validate_node_id(node_id) -> None:
         if not isinstance(node_id, int) or isinstance(node_id, bool) or node_id < 1:
             raise InvalidInputError(f"node_id ต้องเป็นจำนวนเต็มบวก ไม่ใช่ {node_id!r}")
