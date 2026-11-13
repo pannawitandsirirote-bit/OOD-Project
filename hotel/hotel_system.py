@@ -17,10 +17,10 @@ from hotel.models import (
 
 class HotelSystem:
     def __init__(self, router):
-        self._router = router
-        self._location = {} 
-        self._room_index = {}
-        self._load = {node_id: 0 for node_id in router.nodes()}
+        self.__router = router
+        self.__location = {} 
+        self.__room_index = {}
+        self.__load = {node_id: 0 for node_id in router.nodes()}
 
     @classmethod
     def create(cls, n_nodes: int, v: int, guests_per_channel: list,
@@ -49,17 +49,17 @@ class HotelSystem:
         return system
 
     def add_guest(self, c: int, s: int) -> Guest:
-        self._validate_guest_code(c, s)
+        self.__validate_guest_code(c, s)
         key = (c, s)
-        if key in self._location:
+        if key in self.__location:
             raise DuplicateGuestError(f"รหัสแขก {key} มีอยู่แล้ว")
 
         guest = Guest.create(c, s)
-        node_id = self._router.node_for(c, s)
+        node_id = self.__router.node_for(c, s)
 
-        self._location[key] = node_id
-        self._room_index[(node_id, guest.room_no)] = key
-        self._load[node_id] = self._load.get(node_id, 0) + 1
+        self.__location[key] = node_id
+        self.__room_index[(node_id, guest.room_no)] = key
+        self.__load[node_id] = self.__load.get(node_id, 0) + 1
         return guest
 
     def add_guests(self, c: int, s_start: int, count: int) -> list:
@@ -68,10 +68,10 @@ class HotelSystem:
         if count == 0:
             return []
 
-        self._validate_guest_code(c, s_start)
+        self.__validate_guest_code(c, s_start)
         codes = [(c, s_start + i) for i in range(count)]
 
-        duplicates = [code for code in codes if code in self._location]
+        duplicates = [code for code in codes if code in self.__location]
         if duplicates:
             raise DuplicateGuestError(
                 f"รหัสแขกซ้ำในกลุ่มที่จะเพิ่ม: {duplicates} — ปฏิเสธทั้งกลุ่ม"
@@ -80,40 +80,40 @@ class HotelSystem:
         return [self.add_guest(cc, ss) for cc, ss in codes]
 
     def remove_guest(self, c: int, s: int) -> Guest:
-        self._validate_guest_code(c, s)
+        self.__validate_guest_code(c, s)
         key = (c, s)
-        if key not in self._location:
+        if key not in self.__location:
             raise GuestNotFoundError(f"ไม่พบรหัสแขก {key}")
 
-        node_id = self._location.pop(key)
+        node_id = self.__location.pop(key)
         room_no = room_number(c, s)
-        del self._room_index[(node_id, room_no)]
-        self._load[node_id] -= 1
+        del self.__room_index[(node_id, room_no)]
+        self.__load[node_id] -= 1
 
         return Guest.create(c, s)
 
     def find_by_guest(self, c: int, s: int) -> Optional[tuple]:
-        node_id = self._location.get((c, s))
+        node_id = self.__location.get((c, s))
         if node_id is None:
             return None
         return (node_id, room_number(c, s))
 
     def find_by_room(self, node_id: int, room_no: int) -> Optional[tuple]:
-        return self._room_index.get((node_id, room_no))
+        return self.__room_index.get((node_id, room_no))
 
     def compute_node(self, c: int, s: int) -> int:
-        return self._router.node_for(c, s)
+        return self.__router.node_for(c, s)
 
     def list_rooms(self) -> list:
         rows = [
             (node_id, room_no, code[0], code[1])
-            for (node_id, room_no), code in self._room_index.items()
+            for (node_id, room_no), code in self.__room_index.items()
         ]
         rows.sort(key=lambda row: (row[0], row[1]))
         return rows
 
     def load_stats(self) -> LoadStats:
-        per_node = dict(self._load)
+        per_node = dict(self.__load)
         loads = list(per_node.values())
 
         if self.guest_count == 0:
@@ -130,10 +130,10 @@ class HotelSystem:
 
     @property
     def guest_count(self) -> int:
-        return len(self._location)
+        return len(self.__location)
 
     @staticmethod
-    def _validate_guest_code(c, s):
+    def __validate_guest_code(c, s):
         if not isinstance(c, int) or not isinstance(s, int):
             raise InvalidInputError("c และ s ต้องเป็นจำนวนเต็ม")
         if c < 1 or s < 1:
@@ -143,74 +143,86 @@ class HotelSystem:
 
 
     @staticmethod
-    def _validate_node_id(node_id):
+    def __validate_node_id(node_id):
         if not isinstance(node_id, int) or isinstance(node_id, bool) or node_id < 1:
             raise InvalidInputError(f"node_id ต้องเป็นจำนวนเต็มบวก ไม่ใช่ {node_id!r}")
 
     def add_node(self, node_id: int) -> MigrationReport:
-        self._validate_node_id(node_id)
-        if node_id in self._load:
+        self.__validate_node_id(node_id)
+        if node_id in self.__load:
             raise DuplicateNodeError(f"อาคาร {node_id} มีอยู่แล้ว วงแหวนไม่เปลี่ยน")
 
         total = self.guest_count
-        self._router.add_node(node_id)
-        moves = self._find_moves()
-        self._load[node_id] = 0
-        self._apply_moves(moves)
+        self.__router.add_node(node_id)
+        moves = self.__find_moves()
+        self.__load[node_id] = 0
+        self.__apply_moves(moves)
         return MigrationReport(action="add", node_id=node_id, total_guests=total, moves=moves)
 
     def remove_node(self, node_id: int) -> MigrationReport:
-        self._validate_node_id(node_id)
-        if node_id not in self._load:
+        self.__validate_node_id(node_id)
+        if node_id not in self.__load:
             raise NodeNotFoundError(f"ไม่พบอาคาร {node_id}")
-        if len(self._load) <= 1:
+        if len(self.__load) <= 1:
             raise LastNodeError("ลบอาคารสุดท้ายไม่ได้ ต้องมีอาคารอย่างน้อย 1 แห่งเสมอ")
 
         total = self.guest_count
-        self._router.remove_node(node_id)
-        moves = self._find_moves()
-        self._apply_moves(moves)
-        assert self._load[node_id] == 0, "แขกยังค้างอยู่ในอาคารที่ถูกลบ"
-        del self._load[node_id]
+        self.__router.remove_node(node_id)
+        moves = self.__find_moves()
+        self.__apply_moves(moves)
+        assert self.__load[node_id] == 0, "แขกยังค้างอยู่ในอาคารที่ถูกลบ"
+        del self.__load[node_id]
         return MigrationReport(action="remove", node_id=node_id, total_guests=total, moves=moves)
 
-    def _find_moves(self) -> list:
+    def __find_moves(self) -> list:
 
         moves = []
-        for (c, s), old_node in self._location.items():
-            new_node = self._router.node_for(c, s)
+        for (c, s), old_node in self.__location.items():
+            new_node = self.__router.node_for(c, s)
             if new_node != old_node:
                 moves.append(Move(c=c, s=s, old_node=old_node, new_node=new_node,
                                   room_no=room_number(c, s)))
         moves.sort(key=lambda m: (m.c, m.s))    
         return moves
 
-    def _apply_moves(self, moves: list) -> None:
+    def __apply_moves(self, moves: list) -> None:
 
         for m in moves:
-            del self._room_index[(m.old_node, m.room_no)]
+            del self.__room_index[(m.old_node, m.room_no)]
         for m in moves:
-            self._location[(m.c, m.s)] = m.new_node
-            self._room_index[(m.new_node, m.room_no)] = (m.c, m.s)
-            self._load[m.old_node] -= 1
-            self._load[m.new_node] += 1
+            self.__location[(m.c, m.s)] = m.new_node
+            self.__room_index[(m.new_node, m.room_no)] = (m.c, m.s)
+            self.__load[m.old_node] -= 1
+            self.__load[m.new_node] += 1
 
 
     def iter_guests(self) -> list:
         return [(c, s, node_id, room_number(c, s))
-                for (c, s), node_id in sorted(self._location.items())]
+                for (c, s), node_id in sorted(self.__location.items())]
 
     def node_ids(self) -> list:
-        return sorted(self._load)
+        return sorted(self.__load)
+
+    def router_nodes(self) -> list:
+        """รหัสอาคารตามที่ตัวเลือกอาคาร (HashRing / ModNRouter) เก็บไว้ เรียงจากน้อยไปมาก
+
+        คืนเป็น list ใหม่ จึงอ่านได้อย่างเดียว ข้างนอกแก้วงแหวนผ่านเมธอดนี้ไม่ได้
+        """
+        return self.__router.nodes()
+
+    @property
+    def point_count(self) -> int:
+        """จำนวนจุดของตัวเลือกอาคาร: HashRing = M = N × V, ModNRouter = N"""
+        return len(self.__router)
 
     def check_integrity(self) -> bool:
-        if not (len(self._location) == len(self._room_index) == sum(self._load.values())):
+        if not (len(self.__location) == len(self.__room_index) == sum(self.__load.values())):
             return False
-        counted = {node_id: 0 for node_id in self._load}
-        for (c, s), node_id in self._location.items():
+        counted = {node_id: 0 for node_id in self.__load}
+        for (c, s), node_id in self.__location.items():
             if node_id not in counted:
                 return False
-            if self._room_index.get((node_id, room_number(c, s))) != (c, s):
+            if self.__room_index.get((node_id, room_number(c, s))) != (c, s):
                 return False
             counted[node_id] += 1
-        return counted == self._load and sorted(self._load) == sorted(self._router.nodes())
+        return counted == self.__load and sorted(self.__load) == sorted(self.__router.nodes())

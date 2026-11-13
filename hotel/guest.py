@@ -14,29 +14,29 @@ def room_number(c: int, s: int) -> int:
 
 
 class Guest:
-    __slots__ = ("_c", "_s", "_room_no", "_key")
+    __slots__ = ("__c", "__s", "__room_no", "__key")
 
     def __init__(self, c: int, s: int, room_no: int, key: str):
-        self._c = c
-        self._s = s
-        self._room_no = room_no
-        self._key = key
+        self.__c = c
+        self.__s = s
+        self.__room_no = room_no
+        self.__key = key
 
     @property
     def c(self) -> int:
-        return self._c
+        return self.__c
 
     @property
     def s(self) -> int:
-        return self._s
+        return self.__s
 
     @property
     def room_no(self) -> int:
-        return self._room_no
+        return self.__room_no
 
     @property
     def key(self) -> str:
-        return self._key
+        return self.__key
 
     @classmethod
     def create(cls, c: int, s: int) -> "Guest":
@@ -45,15 +45,15 @@ class Guest:
     def __eq__(self, other) -> bool:
         if not isinstance(other, Guest):
             return NotImplemented
-        return (self._c, self._s, self._room_no, self._key) == (
-            other._c, other._s, other._room_no, other._key,
+        return (self.__c, self.__s, self.__room_no, self.__key) == (
+            other.__c, other.__s, other.__room_no, other.__key,
         )
 
     def __hash__(self) -> int:
-        return hash((self._c, self._s, self._room_no, self._key))
+        return hash((self.__c, self.__s, self.__room_no, self.__key))
 
     def __repr__(self) -> str:
         return (
-            f"Guest(c={self._c!r}, s={self._s!r}, "
-            f"room_no={self._room_no!r}, key={self._key!r})"
+            f"Guest(c={self.__c!r}, s={self.__s!r}, "
+            f"room_no={self.__room_no!r}, key={self.__key!r})"
         )

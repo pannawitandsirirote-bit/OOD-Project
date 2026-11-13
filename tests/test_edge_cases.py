@@ -9,8 +9,8 @@ from hotel.models import (DuplicateGuestError, DuplicateNodeError, GuestNotFound
 
 def state(hs):
     """ภาพรวมข้อมูลทั้งหมดของระบบ ใช้เทียบว่า "ไม่เปลี่ยน" """
-    return (hs.iter_guests(), hs.list_rooms(), hs.load_stats().per_node, hs._router.nodes(),
-            len(hs._router))
+    return (hs.iter_guests(), hs.list_rooms(), hs.load_stats().per_node, hs.router_nodes(),
+            hs.point_count)
 
 
 class EdgeBase(unittest.TestCase):
@@ -65,12 +65,19 @@ class NodeEdgeCases(EdgeBase):
         self.assertTrue(self.hs.check_integrity())
 
     def test_duplicate_node_does_not_double_ring_points(self):
-        n_points = len(self.hs._router)
+        n_points = self.hs.point_count
         with self.assertRaises(DuplicateNodeError):
             self.hs.add_node(1)
-        self.assertEqual(len(self.hs._router), n_points)       # M = N*V ยังเท่าเดิม
+        self.assertEqual(self.hs.point_count, n_points)        # M = N*V ยังเท่าเดิม
         self.hs.remove_node(1)
-        self.assertEqual(len(self.hs._router), n_points - 8)   # ลบได้หมด ไม่มีจุดตกค้าง
+        self.assertEqual(self.hs.point_count, n_points - 8)    # ลบได้หมด ไม่มีจุดตกค้าง
+
+    def test_internal_data_is_name_mangled(self):
+        for name in ("__router", "__location", "__room_index", "__load", "_router", "_location"):
+            self.assertFalse(hasattr(self.hs, name), name)
+        nodes = self.hs.router_nodes()
+        nodes.append(99)                                     # แก้ list ที่ได้ ไม่กระทบระบบ
+        self.assertNotIn(99, self.hs.router_nodes())
 
     def test_modn_router_errors(self):
         r = ModNRouter()
